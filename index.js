@@ -10,7 +10,7 @@ const app = express();
 const PORT = 5000;
 
 // Ensure temporary upload directory exists (Render supports only /tmp)
-const uploadDir = '/tmp';
+const uploadDir = "uploads/";
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
