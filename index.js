@@ -3,7 +3,7 @@ const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
-const pool = require('./db');
+const pool = require('../db');
 const { loadModels, getDescriptor, euclideanDistance } = require('./faceUtils');
 
 const app = express();
