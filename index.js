@@ -27,7 +27,7 @@ app.post('/register', upload.single('image'), async (req, res) => {
     const descriptor = await getDescriptor(imagePath);
     const userId = uuidv4();
     await pool.query(
-      'INSERT INTO users (id, username, descriptor) VALUES ($1, $2, $3)',
+      'INSERT INTO fusers (id, username, descriptor) VALUES ($1, $2, $3)',
       [userId, username, descriptor]
     );
     fs.unlinkSync(imagePath); // cleanup
@@ -45,7 +45,7 @@ app.post('/login', upload.single('image'), async (req, res) => {
   try {
     const inputDescriptor = await getDescriptor(imagePath);
 
-    const result = await pool.query('SELECT id, username, descriptor FROM users');
+    const result = await pool.query('SELECT id, username, descriptor FROM fusers');
     let matchedUser = null;
 
     for (let row of result.rows) {
