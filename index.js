@@ -28,7 +28,7 @@ app.post('/register', upload.single('image'), async (req, res) => {
     const userId = uuidv4();
     await pool.query(
       'INSERT INTO fusers (id, username, descriptor) VALUES ($1, $2, $3)',
-      [userId, username, JSON.stringify(Array.from(descriptor))]
+      [userId, username, descriptor]
     );
     fs.unlinkSync(imagePath); // cleanup
     res.json({ message: 'User registered successfully' });
@@ -49,8 +49,7 @@ app.post('/login', upload.single('image'), async (req, res) => {
     let matchedUser = null;
 
     for (let row of result.rows) {
-const storedDescriptor = Float32Array.from(row.descriptor);
-const dist = euclideanDistance(inputDescriptor, storedDescriptor);
+      const dist = euclideanDistance(inputDescriptor, row.descriptor);
       if (dist < 0.6) {
         matchedUser = row;
         break;
