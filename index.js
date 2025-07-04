@@ -8,18 +8,37 @@ const pool = require('./db');
 const { loadModels, getDescriptor, euclideanDistance } = require('./faceUtils');
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
-// Multer setup
-const upload = multer({ dest: 'uploads/' });
+// ✅ Create uploads/ directory if it doesn't exist
+const uploadDir = 'uploads/';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+// ✅ Custom multer storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname);
+  },
+});
+
+const upload = multer({ storage });
 
 (async () => {
   await loadModels();
-  console.log('Models loaded');
+  console.log('✅ Models loaded');
 })();
 
-// Register API
+// ✅ Register route
 app.post('/register', upload.single('image'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'Image file missing. Use key name "image".' });
+  }
+
   const { username } = req.body;
   const imagePath = req.file.path;
 
@@ -32,13 +51,17 @@ app.post('/register', upload.single('image'), async (req, res) => {
       [userId, username, JSON.stringify(Array.from(descriptor))]
     );
 
-    fs.unlinkSync(imagePath);
+    fs.unlinkSync(imagePath); // delete after use
     res.json({ message: 'User registered successfully' });
   } catch (err) {
     if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
     console.error('Register Error:', err.message);
     res.status(500).json({ error: err.message });
   }
+});
+
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
 });
 
 
