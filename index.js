@@ -34,7 +34,7 @@ const upload = multer({ storage });
 })();
 
 // ✅ Register route
-app.post('/register', upload.single('image'), async (req, res) => {
+app.post('/register', upload.single('descriptor'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Image file missing. Use key name "image".' });
   }
