@@ -27,8 +27,8 @@ app.post('/register', upload.single('descriptor'), async (req, res) => {
     const descriptor = await getDescriptor(imagePath);
     const userId = uuidv4();
     await pool.query(
-      'INSERT INTO fusers ( username, descriptor) VALUES ( $2, $3)',
-      [ username, descriptor]
+      'INSERT INTO fusers (id, username, descriptor) VALUES ($1, $2, $3)',
+      [userId, username, descriptor]
     );
     fs.unlinkSync(imagePath); // cleanup
     res.json({ message: 'User registered successfully' });
