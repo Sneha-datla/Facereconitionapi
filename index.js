@@ -84,7 +84,8 @@ app.post('/login', upload.single('image'), async (req, res) => {
     let matchedUser = null;
 
     for (let row of result.rows) {
-      const dist = euclideanDistance(inputDescriptor, row.descriptor);
+      const dbDescriptor = JSON.parse(row.descriptor); // ✅ Fix here
+      const dist = euclideanDistance(inputDescriptor, dbDescriptor);
       if (dist < 0.6) {
         matchedUser = row;
         break;
@@ -104,6 +105,7 @@ app.post('/login', upload.single('image'), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 app.listen(PORT, () => {
