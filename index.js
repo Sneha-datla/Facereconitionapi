@@ -79,12 +79,20 @@ app.post('/login', upload.single('image'), async (req, res) => {
 
   try {
     const inputDescriptor = await getDescriptor(imagePath);
-
     const result = await pool.query('SELECT id, username, descriptor FROM fusers');
     let matchedUser = null;
 
     for (let row of result.rows) {
-      const dbDescriptor = JSON.parse(row.descriptor); // ✅ Fix here
+      let dbDescriptor;
+      try {
+        dbDescriptor = typeof row.descriptor === 'string'
+          ? JSON.parse(row.descriptor)
+          : row.descriptor;
+      } catch (err) {
+        console.warn(`Invalid descriptor for user ${row.username}`);
+        continue;
+      }
+
       const dist = euclideanDistance(inputDescriptor, dbDescriptor);
       if (dist < 0.6) {
         matchedUser = row;
@@ -92,17 +100,16 @@ app.post('/login', upload.single('image'), async (req, res) => {
       }
     }
 
-    fs.unlinkSync(imagePath);
-
     if (matchedUser) {
       res.json({ message: 'Login successful', user: matchedUser.username });
     } else {
       res.status(401).json({ message: 'Face not recognized' });
     }
   } catch (err) {
-    fs.unlinkSync(imagePath);
     console.error('Login error:', err);
     res.status(500).json({ error: err.message });
+  } finally {
+    fs.unlink(imagePath, () => {}); // ✅ always delete uploaded file
   }
 });
 
