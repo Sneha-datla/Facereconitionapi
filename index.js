@@ -19,24 +19,28 @@ const upload = multer({ dest: 'uploads/' });
 })();
 
 // Register API
-app.post('/register', upload.single('descriptor'), async (req, res) => {
+app.post('/register', upload.single('image'), async (req, res) => {
   const { username } = req.body;
   const imagePath = req.file.path;
 
   try {
     const descriptor = await getDescriptor(imagePath);
     const userId = uuidv4();
+
     await pool.query(
       'INSERT INTO fusers (id, username, descriptor) VALUES ($1, $2, $3)',
-      [userId, username, descriptor]
+      [userId, username, JSON.stringify(Array.from(descriptor))]
     );
-    fs.unlinkSync(imagePath); // cleanup
+
+    fs.unlinkSync(imagePath);
     res.json({ message: 'User registered successfully' });
   } catch (err) {
-    fs.unlinkSync(imagePath);
+    if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+    console.error('Register Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // Login API
 app.post('/login', upload.single('image'), async (req, res) => {
