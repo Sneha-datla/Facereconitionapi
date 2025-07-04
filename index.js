@@ -32,6 +32,9 @@ const upload = multer({ storage });
   await loadModels();
   console.log('Models loaded');
 })();
+app.get('/', (req, res) => {
+  res.send('✅ Face recognition API is up');
+});
 
 // Register API
 app.post('/register', upload.single('image'), async (req, res) => {
