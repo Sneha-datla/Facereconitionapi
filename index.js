@@ -7,7 +7,7 @@ const pool = require('./db');
 const { loadModels, getDescriptor, euclideanDistance } = require('./faceUtils');
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // Ensure temporary upload directory exists (Render supports only /tmp)
 const uploadDir = "uploads/";
@@ -101,6 +101,8 @@ app.post('/login', upload.single('image'), async (req, res) => {
   }
 });
 
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
