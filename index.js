@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
@@ -10,9 +9,25 @@ const { loadModels, getDescriptor, euclideanDistance } = require('./faceUtils');
 const app = express();
 const PORT = 5000;
 
-// Multer setup
-const upload = multer({ dest: 'uploads/' });
+// Ensure temporary upload directory exists (Render supports only /tmp)
+const uploadDir = '/tmp';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
 
+// Multer setup using diskStorage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueName = Date.now() + '-' + file.originalname;
+    cb(null, uniqueName);
+  },
+});
+const upload = multer({ storage });
+
+// Load face recognition models
 (async () => {
   await loadModels();
   console.log('Models loaded');
@@ -21,12 +36,14 @@ const upload = multer({ dest: 'uploads/' });
 // Register API
 app.post('/register', upload.single('image'), async (req, res) => {
   const { username } = req.body;
+  const file = req.file;
 
-  if (!req.file) {
+  if (!file) {
     return res.status(400).json({ error: 'No image uploaded' });
   }
 
-  const imagePath = req.file.path;
+  const imagePath = file.path;
+  console.log('Register image uploaded at:', imagePath);
 
   try {
     const descriptor = await getDescriptor(imagePath);
@@ -34,20 +51,27 @@ app.post('/register', upload.single('image'), async (req, res) => {
 
     await pool.query(
       'INSERT INTO fusers (id, username, descriptor) VALUES ($1, $2, $3)',
-      [userId, username, Array.from(descriptor)]  // Ensure it's an array
+      [userId, username, Array.from(descriptor)]
     );
 
-    fs.unlinkSync(imagePath);
+    fs.unlinkSync(imagePath); // Clean up the uploaded image
     res.json({ message: 'User registered successfully' });
   } catch (err) {
     fs.unlinkSync(imagePath);
+    console.error('Register error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Login API
+// Login API (unchanged, but you can update it similarly)
 app.post('/login', upload.single('image'), async (req, res) => {
-  const imagePath = req.file.path;
+  const file = req.file;
+
+  if (!file) {
+    return res.status(400).json({ error: 'No image uploaded' });
+  }
+
+  const imagePath = file.path;
 
   try {
     const inputDescriptor = await getDescriptor(imagePath);
@@ -63,7 +87,7 @@ app.post('/login', upload.single('image'), async (req, res) => {
       }
     }
 
-    fs.unlinkSync(imagePath); // cleanup
+    fs.unlinkSync(imagePath);
 
     if (matchedUser) {
       res.json({ message: 'Login successful', user: matchedUser.username });
@@ -72,6 +96,7 @@ app.post('/login', upload.single('image'), async (req, res) => {
     }
   } catch (err) {
     fs.unlinkSync(imagePath);
+    console.error('Login error:', err);
     res.status(500).json({ error: err.message });
   }
 });
