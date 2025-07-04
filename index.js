@@ -40,7 +40,7 @@ app.post('/register', upload.single('descriptor'), async (req, res) => {
   }
 
   const { username } = req.body;
-  const imagePath = req.file.path;
+  const imagePath = req.files;
 
   try {
     const descriptor = await getDescriptor(imagePath);
